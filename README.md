@@ -299,13 +299,14 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 
 ### DNSSEC Validation and Deployment Safeguards
 
-- DDI platform supports multi-signer DNSSEC operations according to [RFC 8901](https://www.rfc-editor.org/rfc/rfc8901.html), where applicable
-- DDI platform validates the presence and correctness of RRSIG records before publishing or deploying signed zones
-- DDI platform validates DS, DNSKEY, KSK and ZSK consistency before removing key material from signed zones
-- DDI platform provides pre-deployment DNSSEC validation to detect broken chains of trust before changes become active
-- DDI platform provides automated safeguards for DNSSEC rollovers and does not rely solely on manual validation
-- DDI platform provides alerting and reporting for DNSSEC inconsistencies, expired signatures and incomplete signing states
-- DDI vendor can document which DNSSEC protection mechanisms exist today and which improvements are on the roadmap
+- supports multi-signer DNSSEC according to [RFC 8901](https://www.rfc-editor.org/rfc/rfc8901.html), where applicable
+- validates RRSIG records before publishing signed zones
+- validates DS, DNSKEY, KSK and ZSK consistency before key removal
+- detects broken chains of trust before deployment
+- provides automated safeguards for DNSSEC rollovers
+- does not rely solely on manual DNSSEC validation
+- alerts on DNSSEC inconsistencies, expired signatures and incomplete signing states
+- documents current DNSSEC safeguards and roadmap items
 
 # Requirements for DHCP Platform
 
