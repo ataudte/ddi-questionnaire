@@ -297,6 +297,16 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 - hosting provider supports ZSK roll-over with pre-publish signatures
 - hosting provider supports KSK roll-over with pre-publish signatures
 
+### DNSSEC Validation and Deployment Safeguards
+
+- DDI platform supports multi-signer DNSSEC operations according to [RFC 8901](https://www.rfc-editor.org/rfc/rfc8901.html), where applicable
+- DDI platform validates the presence and correctness of RRSIG records before publishing or deploying signed zones
+- DDI platform validates DS, DNSKEY, KSK and ZSK consistency before removing key material from signed zones
+- DDI platform provides pre-deployment DNSSEC validation to detect broken chains of trust before changes become active
+- DDI platform provides automated safeguards for DNSSEC rollovers and does not rely solely on manual validation
+- DDI platform provides alerting and reporting for DNSSEC inconsistencies, expired signatures and incomplete signing states
+- DDI vendor can document which DNSSEC protection mechanisms exist today and which improvements are on the roadmap
+
 # Requirements for DHCP Platform
 
 - service instance provides high available DHCP (cluster, DHCP failover, etc.)
