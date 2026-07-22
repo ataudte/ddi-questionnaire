@@ -1,7 +1,7 @@
 
 # Motivation
 
-This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluation. It begins with general aspects of the solution, followed by a questionnaire on DNS, DHCP, and IPAM. Drawings and sketches should be included where available.
+This document provides a vendor-neutral starting point for evaluating DNS, DHCP, and IP address management (DDI) solutions. It covers functional, architectural, operational, security, automation, and support requirements. The questionnaire should be adapted to the organization’s risks, operating model, regulatory obligations, and deployment scenarios. Drawings and sketches should be included where they improve clarity.
 
 # Table of Contents
 <details>
@@ -26,7 +26,15 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
   - [Requirements for DNS Zone Management](#requirements-for-dns-zone-management)
   - [Requirements for DNS Record Management](#requirements-for-dns-record-management)
   - [Requirements for further DNS Capabilities](#requirements-for-further-dns-capabilities)
-  - [Requirements for DNSSEC Management](#requirements-for-dnssec-management)
+  - [Requirements for DNS Security](#requirements-for-dns-security)
+    - [DNS Security Architecture and Hardening](#dns-security-architecture-and-hardening)
+    - [Authoritative DNS Protection](#authoritative-dns-protection)
+    - [Recursive DNS Protection and Threat Defense](#recursive-dns-protection-and-threat-defense)
+    - [DNS Transaction and Data Protection](#dns-transaction-and-data-protection)
+    - [DNS Monitoring, Detection and Response](#dns-monitoring-detection-and-response)
+    - [DNS Privacy and Encrypted DNS](#dns-privacy-and-encrypted-dns)
+    - [Requirements for DNSSEC Management](#requirements-for-dnssec-management)
+    - [DNSSEC Validation and Deployment Safeguards](#dnssec-validation-and-deployment-safeguards)
 - [Requirements for DHCP Platform](#requirements-for-dhcp-platform)
   - [Requirements for DHCP Scope Management](#requirements-for-dhcp-scope-management)
   - [Requirements for DHCP Options](#requirements-for-dhcp-options)
@@ -246,9 +254,9 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 - web UI lists records of secondary zones of non-managed primary
 - IPAM instance and service instance support the integration with Active Directory (GSS-TSIG signed dynamic DNS updates)
 - IPAM instance and service instance support RFC-compliant DNS records
-  - RFC 1035 records (A, CNAME, PTR, etc.)
-  - RFC 2782 records (SRV)
-  - RFC 3596 records (AAAA)
+  - [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035.html) records (A, CNAME, PTR, etc.)
+  - [RFC 2782](https://www.rfc-editor.org/rfc/rfc2782.html) records (SRV)
+  - [RFC 3596](https://www.rfc-editor.org/rfc/rfc3596.html) records (AAAA)
 - web UI provides real-time visibility for dynamic DNS records
 - web UI validates user input for zones, records & options
 
@@ -261,7 +269,6 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 - web UI provides visibility for inheritance of DNS options
 - web UI provides templates for zones and records (e.g. www, mail, etc.)
 - changes to a template can be re-applied with linked objects
-- IPAM instance and service instance support response policy zones (RPZ)
 - web UI supports management of DNS options missing in UI (extensions)
 - web UI provides access to name server control utility (RNDC) features (flush DNS, etc.)
 - web UI provides access DNS logs
@@ -274,39 +281,150 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 - web UI allows access to DNS statistics (op codes, query types, etc.)
 - web UI supports bulk changes for DNS records (e.g. renaming based on patterns)
 
-## Requirements for DNSSEC Management
+## Requirements for DNS Security
 
-- hosting provider supports DNSSEC-enabled zones
-  - incl. record types of RFC 4034 (`DNSKEY`, `RRSIG`, `NSEC`, `DS`), RFC 5155 (`NSEC3`), RFC 7671 (`TLSA`) & RFC 8078 (`CDS/DNSKEY`)
-- hosting provider can enable DNSSEC signing per zone
-- IPAM instance can enable DNSSEC validation per server
-- validation of non-managed signed zones can be disabled (negative trust anchors)
-- hosting provider support NSEC and NSEC3 with various algorithms
-- hosting provider allows central key storage and management
-- assignment of parameters for zone signing is managed centrally via policies
-- hosting provider supports automatic key roll-over for ZSK
-- hosting provider supports automatic key roll-over for KSK
-- hosting provider supports emergency key roll-over for ZSK
-- hosting provider supports emergency key roll-over for KSK
-- hosting provider supports key export for ZSK
-- hosting provider supports key export for KSK
-- hosting provider sends notifications for automatic ZSK roll-overs
-- hosting provider sends notifications for KSK expiration
-- hosting provider supports ZSK roll-over with double signatures
-- hosting provider supports KSK roll-over with double signatures
-- hosting provider supports ZSK roll-over with pre-publish signatures
-- hosting provider supports KSK roll-over with pre-publish signatures
+DNS security must be evaluated as a combination of service resilience, configuration integrity, transaction protection, abuse prevention, threat detection, privacy, operational controls, and DNSSEC. DNSSEC provides origin authentication and integrity protection for DNS data, but does not by itself protect DNS availability, endpoint confidentiality, recursive resolvers from abuse, or organizations from malicious use of DNS.
+
+### DNS Security Architecture and Hardening
+
+- security functions can be applied independently to authoritative DNS, recursive DNS, forwarding DNS and DNS management components
+- authoritative and recursive DNS roles can be separated onto different service instances
+- external authoritative DNS, internal authoritative DNS and recursive DNS can be separated into distinct trust zones
+- management, control-plane and DNS service traffic can use separate interfaces, networks or security policies
+- service instances support least-functionality deployment with unnecessary services and interfaces disabled
+- DNS software, operating system and packaged dependencies can be patched independently according to documented support policies
+- security configuration can be managed centrally through reusable and version-controlled policies or templates
+- configuration changes support validation, approval, staged deployment and rollback
+- configuration drift between intended and running DNS configuration is detected and reported
+- administrative access supports role-based access control, multi-factor authentication and separation of duties
+- privileged actions, policy changes and emergency changes are recorded in a tamper-evident audit trail
+- cryptographic keys and shared secrets can be stored in a protected key store, HSM or external secrets-management system
+- the platform documents secure configuration baselines for each supported DNS role
+
+### Authoritative DNS Protection
+
+- authoritative servers can be configured as authoritative-only and do not provide recursion to untrusted clients
+- zone transfers are restricted to explicitly authorized secondary servers
+- dynamic updates are restricted to explicitly authorized clients and zones
+- NOTIFY, update and transfer relationships can be authenticated
+- source-based and destination-based access control lists can be applied to queries, transfers, updates and administrative operations
+- hidden-primary and stealth-secondary architectures are supported
+- authoritative service supports geographic, network and failure-domain diversity
+- authoritative service supports anycast or equivalent distributed service architectures where required
+- the solution supports response rate limiting or an equivalent mechanism to reduce reflection and amplification abuse
+- the solution supports DNS Cookies or equivalent protections against off-path spoofing where applicable
+- minimal responses for `ANY` queries or equivalent amplification-reduction behavior can be configured
+- EDNS UDP response sizes and fallback to TCP can be controlled to reduce fragmentation and amplification risk
+- query and connection limits can be applied by client, server, zone, query type or policy
+- protections are available for floods, malformed traffic and pseudorandom-subdomain attacks without blocking legitimate traffic indiscriminately
+- delegation consistency, lame delegations, missing glue, unreachable authoritative servers and other resilience defects are detected
+- external authoritative zones can be monitored from multiple independent vantage points
+
+### Recursive DNS Protection and Threat Defense
+
+- recursive service is restricted to authorized clients and cannot operate as an unintended open resolver
+- recursion, forwarding and cache behavior can be configured independently by client group, network, view or policy
+- the resolver performs source-port and transaction-ID randomization and implements current cache-poisoning defenses
+- DNS Cookies can be used where supported by communicating parties
+- DNSSEC validation can be enabled centrally and overridden only through controlled exceptions
+- negative trust anchors are time-bounded, documented, auditable and automatically reviewed or expired
+- response policy zones or equivalent policy mechanisms can block, redirect, sinkhole, rewrite or log selected domain names and responses
+- security policies can use multiple internal and external threat-intelligence sources
+- threat-intelligence sources include provenance, confidence, age, expiration and update status
+- allow lists and exception policies take precedence predictably and are auditable
+- policies can identify or mitigate phishing, malware, command-and-control, domain-generation algorithms, newly observed domains, DNS tunneling, data exfiltration, fast flux and suspicious DNS behavior
+- detection can use query names, response data, client identity, destination, timing, volume and behavioral context
+- policies support monitor-only, alert, block, redirect, sinkhole and custom-response actions
+- security enforcement can continue during temporary loss of the central management or cloud control plane
+- cached threat intelligence and policy data have defined freshness, fail-open and fail-closed behavior
+- blocked responses preserve sufficient context for investigation and user support
+- policy bypass by hard-coded external resolvers, encrypted DNS or unauthorized forwarding can be detected or controlled where within scope
+
+### DNS Transaction and Data Protection
+
+- zone transfers and dynamic updates support TSIG according to [RFC 8945](https://www.rfc-editor.org/rfc/rfc8945.html) or an equivalent standards-based authentication mechanism
+- strong current TSIG algorithms are supported and deprecated algorithms can be disabled
+- shared keys can be generated, distributed, rotated, revoked and audited centrally
+- separate keys can be assigned per relationship, server, zone or purpose
+- zone transfers can use TLS according to [RFC 9103](https://www.rfc-editor.org/rfc/rfc9103.html) where confidentiality is required and supported
+- GSS-TSIG is supported for secure dynamic updates in Microsoft Active Directory environments
+- DNS management APIs and control channels use authenticated encryption
+- DNS data at rest, backups and exported configuration files can be encrypted
+- exported zones, logs, packet captures and support bundles can be access-controlled and sanitized
+- the integrity of zone data is checked before publication
+- the platform detects unauthorized, out-of-band or unexpected changes to authoritative data
+- registrar, registry, DNS-hosting and internal approval workflows can be documented and reconciled for critical domains
+
+### DNS Monitoring, Detection and Response
+
+- the platform provides real-time and historical visibility into DNS queries, responses, errors, latency, cache behavior and policy actions
+- monitoring distinguishes authoritative, recursive, forwarding and encrypted DNS traffic
+- logs include sufficient context to correlate client, source network, queried name, query type, response code, answer, policy, server and timestamp
+- logging can be filtered and sampled without losing security-relevant events
+- log retention and deletion can be configured by data type, tenant and legal or operational requirement
+- sensitive DNS telemetry can be masked, minimized or pseudonymized
+- events and telemetry can be exported using syslog and documented APIs and integrated with SIEM, SOAR, NDR and observability platforms
+- alerts can be generated for anomalous query volume, error rates, latency, cache misses, NXDOMAIN spikes, SERVFAIL spikes and unusual record types
+- the platform detects DNS tunneling, data exfiltration, domain-generation behavior, fast flux, cache poisoning indicators and denial-of-service conditions
+- detections provide the evidence, confidence and affected clients or domains needed for investigation
+- response actions can be automated through APIs, workflows or integrations while retaining approval and rollback controls
+- analysts can search historical DNS activity for a domain, client, IP address, policy or time range
+- packet capture or equivalent detailed diagnostics can be enabled selectively and for a limited duration
+- security events preserve chain-of-custody and audit information where required
+- health monitoring covers DNS service availability from the client perspective, not only process or appliance health
+- recovery procedures support cache flush, policy rollback, zone restore, key recovery and controlled service isolation
+
+### DNS Privacy and Encrypted DNS
+
+- recursive resolvers support QNAME minimisation according to [RFC 9156](https://www.rfc-editor.org/rfc/rfc9156.html)
+- DNS logging and analytics follow documented data-minimisation, retention and access-control policies
+- the platform can provide a documented recursive-resolver privacy statement aligned with [RFC 8932](https://www.rfc-editor.org/rfc/rfc8932.html) where applicable
+- encrypted DNS support is evaluated separately for client-to-resolver, resolver-to-resolver and resolver-to-authoritative communication
+- DNS over TLS and DNS over HTTPS can be enabled for authorized clients where required
+- discovery of designated encrypted resolvers can be supported where applicable
+- encrypted DNS endpoints use managed certificates, strong TLS configuration and authenticated service identities
+- policy, logging and troubleshooting behavior for encrypted DNS is documented
+- the organization can define whether external encrypted resolvers are allowed, blocked, redirected or monitored
+- encrypted DNS does not silently bypass required security controls, split DNS, internal namespaces or regulatory logging obligations
+- the resolver can distinguish privacy protection from anonymity and documents which parties retain visibility into query data
+- recursive-to-authoritative encryption can be supported where standards, interoperability and operational requirements permit
+
+### Requirements for DNSSEC Management
+
+- authoritative DNS supports DNSSEC-enabled zones and the record types required by the DNSSEC standards, including `DNSKEY`, `RRSIG`, `NSEC`, `NSEC3`, `DS`, `CDS` and `CDNSKEY`
+- DNSSEC origin authentication and integrity protection are implemented in alignment with [RFC 9364](https://www.rfc-editor.org/rfc/rfc9364.html) and the applicable DNSSEC standards
+- DNSSEC signing can be enabled per zone and inherited through centrally managed policies
+- DNSSEC validation can be enabled per recursive server, view or policy
+- validation exceptions and negative trust anchors are documented, time-bounded and audited
+- NSEC and NSEC3 are supported, with configurable denial-of-existence parameters
+- supported signing algorithms and key sizes are documented and can be restricted by policy
+- deprecated or prohibited DNSSEC algorithms can be identified and disabled
+- signing keys can be generated and stored centrally, in an HSM or through an external key-management service
+- access to private keys is controlled separately from routine DNS administration
+- separate KSK and ZSK operation and combined signing keys are supported where required
+- signing parameters, signature validity, refresh intervals and key lifetimes can be assigned through reusable policies
+- automated scheduled and emergency key rollovers are supported
+- algorithm rollover is supported
+- parent-side DS publication and removal can be tracked and coordinated
+- CDS and CDNSKEY automation according to [RFC 8078](https://www.rfc-editor.org/rfc/rfc8078.html) is supported where accepted by the parent
+- multi-signer DNSSEC according to [RFC 8901](https://www.rfc-editor.org/rfc/rfc8901.html) is supported where required
+- keys can be backed up, restored, imported, exported, revoked and securely destroyed according to policy
+- the system reports upcoming key, signature and trust-anchor events before they become service-affecting
+- DNSSEC status is visible per zone, signer, key, algorithm, parent and validation state
 
 ### DNSSEC Validation and Deployment Safeguards
 
-- supports multi-signer DNSSEC according to [RFC 8901](https://www.rfc-editor.org/rfc/rfc8901.html), where applicable
-- validates RRSIG records before publishing signed zones
-- validates DS, DNSKEY, KSK and ZSK consistency before key removal
-- detects broken chains of trust before deployment
-- provides automated safeguards for DNSSEC rollovers
-- does not rely solely on manual DNSSEC validation
-- alerts on DNSSEC inconsistencies, expired signatures and incomplete signing states
-- documents current DNSSEC safeguards and roadmap items
+- signed zone contents and RRSIG validity are checked before publication
+- DS, DNSKEY, KSK and ZSK consistency is checked before key activation or removal
+- the platform detects broken, incomplete or unexpected chains of trust before and after deployment
+- safeguards account for propagation delays, TTLs, signature validity and parent-zone processing time
+- automated rollover workflows prevent premature removal of keys or DS records
+- deployment can be staged, validated externally and rolled back safely
+- independent external validation is performed for public signed zones
+- alerts identify expired or near-expiry signatures, missing signatures, unsupported algorithms, stale DS records and validation failures
+- DNSSEC failures can be correlated with configuration changes and key-management events
+- trust-anchor distribution and rollover are managed and monitored for validating resolvers
+- the platform documents implemented safeguards, operational limitations and any roadmap dependencies
 
 # Requirements for DHCP Platform
 
@@ -334,8 +452,8 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 ## Requirements for DHCP Options
 
 - IPAM instance supports management of DHCP match classes
-- IPAM instance supports management of DHCPv4 options (RFC 2132)
-- IPAM instance supports management of DHCPv6 options (RFC 3319)
+- IPAM instance supports management of DHCPv4 options ([RFC 2132](https://www.rfc-editor.org/rfc/rfc2132.html))
+- IPAM instance supports management of DHCPv6 options ([RFC 3319](https://www.rfc-editor.org/rfc/rfc3319.html))
 - web UI supports management of DHCP options missing in UI (extensions)
 - certain DHCPv4 option value can be changed in web UI wherever used in the system
 - certain DHCPv6 option value can be changed in web UI wherever used in the system
@@ -361,7 +479,7 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 
 # Requirements for Address Space Management
 
-- web UI allows management of private IPv4 address space (RFC 1918)
+- web UI allows management of private IPv4 address space ([RFC 1918](https://www.rfc-editor.org/rfc/rfc1918.html))
 - web UI allows management of public IPv4 address space
 - web UI allows management of multicast IPv4 address space (`224.0.0.0/4`)
 - web UI support the allocation of next available IPv4 address range
@@ -429,7 +547,7 @@ This document serves as an inspiration for a DNS, DHCP, and IPAM (DDI) evaluatio
 - service instance provides DHCP via IPv6 (stateful and stateless)
 - IPAM instance manages DHCP via IPv6
 - web UI displays DUID[^9] and IAID[^11] for DHCPv6 clients
-- web UI support management of DHCPv6 redundancy (RFC 6853)
+- web UI support management of DHCPv6 redundancy ([RFC 6853](https://www.rfc-editor.org/rfc/rfc6853.html))
 - service instances can form an IPv6 cluster
 - web UI allows central management of company's IPv6 prefix (given GUA[^12] of company)
 - web UI supports management of dual-stack devices (multi-homed)
