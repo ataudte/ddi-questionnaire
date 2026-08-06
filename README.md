@@ -22,11 +22,11 @@ A suitable solution is not simply the product with the longest feature list. It 
 
 This repository is the second part of a three document lifecycle:
 
-1. [`ddi-workshop`](https://github.com/ataudte/ddi-workshop) defines the current state, target operating model, authority, architecture principles and critical workflows.
+1. [`ddi-workshop`](/ataudte/ddi-workshop) defines the current state, target operating model, authority, architecture principles and critical workflows.
 2. **`ddi-questionnaire`** evaluates candidate solutions against that approved context.
-3. [`ddi-migration-plan`](https://github.com/ataudte/ddi-migration-plan) uses the selected solution, proven behavior and known conditions to plan implementation and migration.
+3. [`ddi-migration-plan`](/ataudte/ddi-migration-plan) uses the selected solution, proven behavior and known conditions to plan implementation and migration.
 
-### Minimum Input From [`ddi-workshop`](https://github.com/ataudte/ddi-workshop)
+### Minimum Input From [`ddi-workshop`](/ataudte/ddi-workshop)
 
 The following artifact names are identical in both repositories. They are the minimum information needed to evaluate solutions without allowing product capabilities to define the enterprise target state.
 
@@ -49,9 +49,9 @@ The following artifact names are identical in both repositories. They are the mi
 
 If one of these inputs is incomplete, the evaluation should record the impact and responsible owner. It should not replace the missing decision with a vendor assumption.
 
-### Minimum Output To [`ddi-migration-plan`](https://github.com/ataudte/ddi-migration-plan)
+### Minimum Output To [`ddi-migration-plan`](/ataudte/ddi-migration-plan)
 
-The following artifact names are used unchanged in [`ddi-migration-plan`](https://github.com/ataudte/ddi-migration-plan). They form the minimum handover contract from evaluation to migration planning.
+The following artifact names are used unchanged in [`ddi-migration-plan`](/ataudte/ddi-migration-plan). They form the minimum handover contract from evaluation to migration planning.
 
 | Questionnaire output | Minimum content required by the migration plan |
 |---|---|
@@ -1411,7 +1411,7 @@ The recommendation should not rely on a total score alone.
 
 # Minimum Handover To The Migration Plan
 
-The following package is the minimum input expected by [`ddi-migration-plan`](https://github.com/ataudte/ddi-migration-plan). The names and intent are deliberately identical in both repositories.
+The following package is the minimum input expected by [`ddi-migration-plan`](/ataudte/ddi-migration-plan). The names and intent are deliberately identical in both repositories.
 
 | Handover item | Minimum content |
 |---|---|
